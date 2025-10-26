@@ -8,35 +8,42 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Blood Bank Theme - Teal & Red */
+    --background: 40 33% 99%; /* cream-50 */
+    --foreground: 191 51% 15%; /* slate-900 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 60 100% 99%; /* cream-100 */
+    --card-foreground: 191 51% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 60 100% 99%;
+    --popover-foreground: 191 51% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 186 62% 34%; /* teal-500 */
+    --primary-foreground: 40 33% 99%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 28 19% 31%; /* brown-600 */
+    --secondary-foreground: 40 33% 99%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 191 23% 38%; /* slate-500 */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 186 62% 34%;
+    --accent-foreground: 40 33% 99%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 349 80% 42%; /* red-500 */
+    --destructive-foreground: 40 33% 99%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 28 19% 31% / 0.2;
+    --input: 28 19% 31% / 0.2;
+    --ring: 186 62% 34%;
 
     --radius: 0.5rem;
+    
+    /* Blood Bank specific colors */
+    --blood-red: 349 80% 42%;
+    --blood-red-light: 1 100% 66%;
+    --teal-light: 185 72% 46%;
+    --teal-dark: 186 62% 29%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,33 +63,39 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 180 8% 12%; /* charcoal-700 */
+    --foreground: 0 0% 96%; /* gray-200 */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 180 3% 15%; /* charcoal-800 */
+    --card-foreground: 0 0% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 180 3% 15%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 185 72% 46%; /* teal-300 */
+    --primary-foreground: 191 51% 15%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 191 4% 47%; /* gray-400 */
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 191 4% 47% / 0.15;
+    --muted-foreground: 0 7% 66%; /* gray-300 */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 185 72% 46%;
+    --accent-foreground: 191 51% 15%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 1 100% 66%; /* red-400 */
+    --destructive-foreground: 0 0% 96%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 191 4% 47% / 0.3;
+    --input: 191 4% 47% / 0.3;
+    --ring: 185 72% 46%;
+    
+    /* Dark mode blood bank colors */
+    --blood-red: 1 100% 66%;
+    --blood-red-light: 1 100% 76%;
+    --teal-light: 185 72% 46%;
+    --teal-dark: 186 71% 39%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
