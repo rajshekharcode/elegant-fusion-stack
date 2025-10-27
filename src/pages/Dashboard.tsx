@@ -1,21 +1,37 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Droplet, Calendar, Award, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import type { Session } from "@supabase/supabase-js";
 
 const Dashboard = () => {
+  const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getSession();
-      return data.session;
-    },
-  });
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        if (!session) {
+          navigate('/login');
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (!session) {
+        navigate('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const { data: donor } = useQuery({
     queryKey: ['donor', session?.user?.id],
@@ -31,13 +47,7 @@ const Dashboard = () => {
     enabled: !!session?.user?.id,
   });
 
-  useEffect(() => {
-    if (!session) {
-      navigate('/login');
-    }
-  }, [session, navigate]);
-
-  if (!donor) {
+  if (!session || !donor) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20">
         <p>Loading...</p>
