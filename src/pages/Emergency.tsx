@@ -39,6 +39,17 @@ const Emergency = () => {
 
       if (error) throw error;
 
+      // Send emergency alert email to admin
+      try {
+        await supabase.functions.invoke('send-emergency-alert', {
+          body: formData
+        });
+        console.log("Emergency alert email sent");
+      } catch (emailError: any) {
+        console.error("Failed to send alert email:", emailError);
+        // Don't fail the request if email fails - the emergency request is already saved
+      }
+
       toast.success("Emergency request submitted successfully! Our team will contact you shortly.");
       navigate("/");
     } catch (error: any) {
