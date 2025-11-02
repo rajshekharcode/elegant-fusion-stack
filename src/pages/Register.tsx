@@ -28,7 +28,20 @@ const Register = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        // Check if user already has a donor profile
+        const { data: donor } = await supabase
+          .from('donors')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (donor) {
+          // User already has a profile, redirect to dashboard
+          navigate("/dashboard");
+        } else {
+          // Pre-fill email for logged-in users
+          setFormData(prev => ({ ...prev, email: session.user.email || '' }));
+        }
       }
     };
     checkSession();
@@ -39,34 +52,56 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // User is logged in, just create donor profile
+        const { error: profileError } = await supabase.from('donors').insert({
+          user_id: session.user.id,
+          name: formData.name,
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          blood_group: formData.bloodGroup,
+          weight: parseFloat(formData.weight),
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+        });
 
-      if (authError) throw authError;
+        if (profileError) throw profileError;
 
-      // Create donor profile
-      const { error: profileError } = await supabase.from('donors').insert({
-        user_id: authData.user?.id,
-        name: formData.name,
-        age: parseInt(formData.age),
-        gender: formData.gender,
-        blood_group: formData.bloodGroup,
-        weight: parseFloat(formData.weight),
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-      });
+        toast.success("Donor profile created successfully!");
+        navigate("/dashboard");
+      } else {
+        // New user registration
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+          },
+        });
 
-      if (profileError) throw profileError;
+        if (authError) throw authError;
 
-      toast.success("Registration successful! Please check your email to verify your account.");
-      navigate("/login");
+        // Create donor profile
+        const { error: profileError } = await supabase.from('donors').insert({
+          user_id: authData.user?.id,
+          name: formData.name,
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          blood_group: formData.bloodGroup,
+          weight: parseFloat(formData.weight),
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+        });
+
+        if (profileError) throw profileError;
+
+        toast.success("Registration successful! Please check your email to verify your account.");
+        navigate("/login");
+      }
     } catch (error: any) {
       toast.error(error.message || "Registration failed");
     } finally {
@@ -98,20 +133,22 @@ const Register = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
+                {!formData.email && (
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@email.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              {!formData.email && (
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <Input
@@ -124,17 +161,18 @@ const Register = () => {
                     minLength={6}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+91 9876543210"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    required
-                  />
-                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+91 9876543210"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">

@@ -33,7 +33,7 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const { data: donor } = useQuery({
+  const { data: donor, isLoading } = useQuery({
     queryKey: ['donor', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) return null;
@@ -41,18 +41,29 @@ const Dashboard = () => {
         .from('donors')
         .select('*')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
       return data;
     },
     enabled: !!session?.user?.id,
   });
 
-  if (!session || !donor) {
+  useEffect(() => {
+    if (session && !isLoading && !donor) {
+      // User is logged in but doesn't have a donor profile
+      navigate('/register');
+    }
+  }, [session, donor, isLoading, navigate]);
+
+  if (!session || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20">
         <p>Loading...</p>
       </div>
     );
+  }
+
+  if (!donor) {
+    return null; // Will redirect to register
   }
 
   const getBadgeColor = (badge: string) => {
