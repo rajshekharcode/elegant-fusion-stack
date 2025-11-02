@@ -85,7 +85,7 @@ const Navbar = () => {
                   asChild
                   variant="outline"
                   size="sm"
-                  className="border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
+                  className="bg-transparent border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
                 >
                   <Link to="/login">
                     <User className="mr-2 h-4 w-4" />
@@ -173,7 +173,7 @@ const Navbar = () => {
                     asChild
                     variant="outline"
                     size="sm"
-                    className="w-full border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
+                    className="w-full bg-transparent border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
                   >
                     <Link to="/login" onClick={() => setIsOpen(false)}>
                       <User className="mr-2 h-4 w-4" />
