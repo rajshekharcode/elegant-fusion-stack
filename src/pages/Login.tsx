@@ -36,6 +36,41 @@ const Login = () => {
 
       if (error) throw error;
 
+      // Fetch donor details to send in notification
+      if (data.user) {
+        const { data: donorData } = await supabase
+          .from('donors')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (donorData) {
+          // Send login notification email (non-blocking)
+          supabase.functions
+            .invoke('send-login-notification', {
+              body: {
+                name: donorData.name,
+                email: donorData.email,
+                bloodGroup: donorData.blood_group,
+                phone: donorData.phone,
+                address: donorData.address,
+                age: donorData.age,
+                gender: donorData.gender,
+                weight: donorData.weight,
+                donationCount: donorData.donation_count,
+                badge: donorData.badge,
+                eligible: donorData.eligible,
+                loginTime: new Date().toLocaleString('en-IN', { 
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'full',
+                  timeStyle: 'long'
+                }),
+              },
+            })
+            .catch((err) => console.error('Failed to send login notification:', err));
+        }
+      }
+
       toast.success("Login successful!");
       navigate("/dashboard");
     } catch (error: any) {

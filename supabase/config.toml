@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.send-emergency-alert]
 verify_jwt = false
+
+[functions.send-login-notification]
+verify_jwt = false
