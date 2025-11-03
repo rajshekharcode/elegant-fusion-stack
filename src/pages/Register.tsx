@@ -44,7 +44,21 @@ const Register = () => {
         }
       }
     };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session) {
+          setTimeout(() => {
+            checkSession();
+          }, 0);
+        }
+      }
+    );
+
     checkSession();
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
