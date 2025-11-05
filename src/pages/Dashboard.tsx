@@ -158,12 +158,6 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">Email:</span>
                 <span className="font-medium">{donor.email}</span>
               </div>
-              {donor.government_id && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Government ID:</span>
-                  <span className="font-medium">{donor.government_id}</span>
-                </div>
-              )}
             </CardContent>
           </Card>
 

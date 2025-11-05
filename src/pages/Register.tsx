@@ -20,7 +20,6 @@ const Register = () => {
     weight: "",
     phone: "",
     address: "",
-    governmentId: "",
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -81,7 +80,6 @@ const Register = () => {
           phone: formData.phone,
           email: formData.email,
           address: formData.address,
-          government_id: formData.governmentId,
         });
 
         if (profileError) throw profileError;
@@ -111,7 +109,6 @@ const Register = () => {
           phone: formData.phone,
           email: formData.email,
           address: formData.address,
-          government_id: formData.governmentId,
         });
 
         if (profileError) throw profileError;
@@ -259,17 +256,6 @@ const Register = () => {
                   placeholder="123 Main Street, City"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="governmentId">Government ID</Label>
-                <Input
-                  id="governmentId"
-                  placeholder="Aadhaar / Passport / Driver's License"
-                  value={formData.governmentId}
-                  onChange={(e) => setFormData({ ...formData, governmentId: e.target.value })}
                   required
                 />
               </div>
