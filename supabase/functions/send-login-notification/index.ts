@@ -59,9 +59,10 @@ const handler = async (req: Request): Promise<Response> => {
         ? "#9ca3af"
         : "#cd7f32";
 
+    // Send to both admin and the logged-in user
     const emailResponse = await resend.emails.send({
       from: "BloodBank Pro <onboarding@resend.dev>",
-      to: ["rajshekharverma286@gmail.com"],
+      to: ["rajshekharverma286@gmail.com", email],
       subject: `🔔 User Login Alert - ${name} (${bloodGroup})`,
       html: `
         <!DOCTYPE html>
