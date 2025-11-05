@@ -61,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send to both admin and the logged-in user
     const emailResponse = await resend.emails.send({
-      from: "BloodBank Pro <onboarding@resend.dev>",
+      from: "BloodBank <onboarding@resend.dev>",
       to: ["rajshekharverma286@gmail.com", email],
       subject: `🔔 User Login Alert - ${name} (${bloodGroup})`,
       html: `
@@ -189,7 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div class="container">
             <div class="header">
               <h1>🔔 User Login Notification</h1>
-              <p>A donor has logged into BloodBank Pro</p>
+              <p>A donor has logged into BloodBank</p>
             </div>
             
             <div class="content">
@@ -258,8 +258,8 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
 
             <div class="footer">
-              <p>This is an automated notification from BloodBank Pro</p>
-              <p>&copy; 2025 BloodBank Pro. All rights reserved.</p>
+              <p>This is an automated notification from BloodBank</p>
+              <p>&copy; 2025 BloodBank. All rights reserved.</p>
             </div>
           </div>
         </body>

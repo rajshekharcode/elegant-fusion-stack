@@ -40,7 +40,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 font-bold text-xl">
             <Heart className="h-6 w-6" />
-            <span>BloodBank Pro</span>
+            <span>BloodBank</span>
           </Link>
 
           {/* Desktop Navigation */}
