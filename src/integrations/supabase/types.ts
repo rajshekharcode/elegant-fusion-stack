@@ -104,6 +104,7 @@ export type Database = {
           eligible_date: string | null
           email: string
           gender: string
+          government_id: string | null
           id: string
           last_donation_date: string | null
           name: string
@@ -123,6 +124,7 @@ export type Database = {
           eligible_date?: string | null
           email: string
           gender: string
+          government_id?: string | null
           id?: string
           last_donation_date?: string | null
           name: string
@@ -142,6 +144,7 @@ export type Database = {
           eligible_date?: string | null
           email?: string
           gender?: string
+          government_id?: string | null
           id?: string
           last_donation_date?: string | null
           name?: string
