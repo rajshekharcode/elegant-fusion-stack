@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email to the blood bank admin
     const emailResponse = await resend.emails.send({
       from: "Blood Bank Emergency <onboarding@resend.dev>",
-      to: ["rajshekharverma286@gmail.com"],
+      to: [Deno.env.get("ADMIN_ALERT_EMAIL") as string],
       subject: `🚨 URGENT: Emergency Blood Request - ${bloodGroup} - ${urgency}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

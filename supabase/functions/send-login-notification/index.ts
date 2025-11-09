@@ -62,7 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send to both admin and the logged-in user
     const emailResponse = await resend.emails.send({
       from: "BloodBank <onboarding@resend.dev>",
-      to: ["rajshekharverma286@gmail.com", email],
+      to: [Deno.env.get("ADMIN_ALERT_EMAIL") as string, email],
       subject: `🔔 User Login Alert - ${name} (${bloodGroup})`,
       html: `
         <!DOCTYPE html>
