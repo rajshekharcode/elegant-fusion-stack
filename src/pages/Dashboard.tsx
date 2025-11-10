@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Droplet, Calendar, Award, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
+import AdminDashboard from "./AdminDashboard";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -33,6 +34,22 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Check if user has admin role
+  const { data: userRole, isLoading: isLoadingRole } = useQuery({
+    queryKey: ['userRole', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
+
   const { data: donor, isLoading } = useQuery({
     queryKey: ['donor', session?.user?.id],
     queryFn: async () => {
@@ -54,12 +71,17 @@ const Dashboard = () => {
     }
   }, [session, donor, isLoading, navigate]);
 
-  if (!session || isLoading) {
+  if (!session || isLoading || isLoadingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20">
         <p>Loading...</p>
       </div>
     );
+  }
+
+  // If user is admin, show admin dashboard
+  if (session && !isLoadingRole && userRole) {
+    return <AdminDashboard />;
   }
 
   if (!donor) {

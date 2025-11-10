@@ -84,6 +84,18 @@ const Register = () => {
 
         if (profileError) throw profileError;
 
+        // Assign donor role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: session.user.id,
+            role: 'donor'
+          });
+
+        if (roleError) {
+          console.error('Error assigning donor role:', roleError);
+        }
+
         toast.success("Donor profile created successfully!");
         navigate("/dashboard");
       } else {
@@ -112,6 +124,18 @@ const Register = () => {
         });
 
         if (profileError) throw profileError;
+
+        // Assign donor role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user?.id,
+            role: 'donor'
+          });
+
+        if (roleError) {
+          console.error('Error assigning donor role:', roleError);
+        }
 
         toast.success("Registration successful! Please check your email to verify your account.");
         navigate("/login");
