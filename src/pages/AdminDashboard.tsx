@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,22 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Plus
+  Plus,
+  X,
+  Phone
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -23,6 +37,10 @@ import {
 } from "@/components/ui/table";
 
 const AdminDashboard = () => {
+  const queryClient = useQueryClient();
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [dialogAction, setDialogAction] = useState<'approve' | 'reject' | null>(null);
+
   // Fetch statistics
   const { data: donors } = useQuery({
     queryKey: ['allDonors'],
@@ -84,6 +102,44 @@ const AdminDashboard = () => {
       case 'High': return 'default';
       case 'Medium': return 'secondary';
       default: return 'outline';
+    }
+  };
+
+  // Mutation to update blood request status
+  const updateRequestStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('blood_requests')
+        .update({ status })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['bloodRequests'] });
+      toast.success(`Request ${variables.status.toLowerCase()} successfully`);
+      setSelectedRequest(null);
+      setDialogAction(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update request: ${error.message}`);
+    },
+  });
+
+  const handleApprove = (request: any) => {
+    setSelectedRequest(request);
+    setDialogAction('approve');
+  };
+
+  const handleReject = (request: any) => {
+    setSelectedRequest(request);
+    setDialogAction('reject');
+  };
+
+  const confirmAction = () => {
+    if (selectedRequest && dialogAction) {
+      const status = dialogAction === 'approve' ? 'Approved' : 'Rejected';
+      updateRequestStatus.mutate({ id: selectedRequest.id, status });
     }
   };
 
@@ -204,6 +260,7 @@ const AdminDashboard = () => {
                   <TableHead>Urgency</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -229,15 +286,49 @@ const AdminDashboard = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="outline">
-                        {request.phone}
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={`tel:${request.phone}`}>
+                          <Phone className="h-3 w-3 mr-1" />
+                          {request.phone}
+                        </a>
                       </Button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {request.status === 'Pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleApprove(request)}
+                              disabled={updateRequestStatus.isPending}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReject(request)}
+                              disabled={updateRequestStatus.isPending}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {request.status !== 'Pending' && (
+                          <span className="text-sm text-muted-foreground">
+                            {request.status}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
                 {!bloodRequests?.length && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No blood requests found
                     </TableCell>
                   </TableRow>
@@ -246,6 +337,46 @@ const AdminDashboard = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={!!dialogAction} onOpenChange={() => setDialogAction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {dialogAction === 'approve' ? 'Approve Request' : 'Reject Request'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {dialogAction === 'approve' ? (
+                  <>
+                    Are you sure you want to approve this blood request for{' '}
+                    <strong>{selectedRequest?.patient_name}</strong>?
+                    <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                      <p><strong>Blood Group:</strong> {selectedRequest?.blood_group}</p>
+                      <p><strong>Units Required:</strong> {selectedRequest?.units_required}</p>
+                      <p><strong>Hospital:</strong> {selectedRequest?.hospital_name}</p>
+                      <p><strong>Urgency:</strong> {selectedRequest?.urgency}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to reject this blood request for{' '}
+                    <strong>{selectedRequest?.patient_name}</strong>? This action will mark the
+                    request as rejected.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmAction}
+                className={dialogAction === 'approve' ? '' : 'bg-destructive hover:bg-destructive/90'}
+              >
+                {dialogAction === 'approve' ? 'Approve' : 'Reject'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
