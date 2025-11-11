@@ -18,6 +18,7 @@ const Emergency = () => {
     urgency: "",
     contactPerson: "",
     phone: "",
+    email: "",
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const Emergency = () => {
         urgency: formData.urgency,
         contact_person: formData.contactPerson,
         phone: formData.phone,
+        email: formData.email,
       });
 
       if (error) throw error;
@@ -157,14 +159,26 @@ const Emergency = () => {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson">Contact Person *</Label>
+                <Input
+                  id="contactPerson"
+                  placeholder="Full name"
+                  value={formData.contactPerson}
+                  onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                  required
+                />
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="contactPerson">Contact Person *</Label>
+                  <Label htmlFor="email">Email Address *</Label>
                   <Input
-                    id="contactPerson"
-                    placeholder="Name"
-                    value={formData.contactPerson}
-                    onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                    id="email"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
                 </div>

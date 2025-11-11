@@ -1,0 +1,115 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface StatusNotificationRequest {
+  email: string;
+  patientName: string;
+  hospitalName: string;
+  bloodGroup: string;
+  unitsRequired: string;
+  status: string;
+  contactPerson: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { email, patientName, hospitalName, bloodGroup, unitsRequired, status, contactPerson }: StatusNotificationRequest = await req.json();
+    
+    console.log("Sending status notification for:", patientName, "to:", email);
+
+    const isApproved = status === "Approved";
+    const statusColor = isApproved ? "#10B981" : "#EF4444";
+    const statusText = isApproved ? "APPROVED ✓" : "REJECTED ✗";
+    const messageText = isApproved 
+      ? "We are pleased to inform you that your blood request has been approved. Our team will contact you shortly to coordinate the blood supply."
+      : "We regret to inform you that your blood request could not be approved at this time. This may be due to stock availability or other factors. Please contact us for alternative options.";
+
+    const emailResponse = await resend.emails.send({
+      from: "Blood Bank <onboarding@resend.dev>",
+      to: [email],
+      subject: `Blood Request ${statusText} - ${bloodGroup}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: ${statusColor}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">Blood Request ${statusText}</h1>
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 20px; border: 1px solid #e5e7eb;">
+            <p style="color: #1f2937; font-size: 16px; line-height: 1.5;">Dear ${contactPerson},</p>
+            
+            <p style="color: #1f2937; font-size: 16px; line-height: 1.5; margin: 20px 0;">
+              ${messageText}
+            </p>
+            
+            <h2 style="color: #1f2937; margin-top: 24px;">Request Details</h2>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; font-weight: bold; color: #374151;">Patient Name:</td>
+                <td style="padding: 12px 0; color: #1f2937;">${patientName}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; font-weight: bold; color: #374151;">Hospital:</td>
+                <td style="padding: 12px 0; color: #1f2937;">${hospitalName}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 0; font-weight: bold; color: #374151;">Blood Group:</td>
+                <td style="padding: 12px 0; color: #dc2626; font-size: 18px; font-weight: bold;">${bloodGroup}</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; font-weight: bold; color: #374151;">Units Required:</td>
+                <td style="padding: 12px 0; color: #1f2937; font-weight: bold;">${unitsRequired} units</td>
+              </tr>
+            </table>
+            
+            <div style="margin-top: 24px; padding: 16px; background-color: white; border-left: 4px solid ${statusColor}; border-radius: 4px;">
+              <p style="margin: 0; color: #374151; font-weight: bold;">Status: ${status}</p>
+              <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">Updated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+            </div>
+            
+            ${isApproved ? `
+              <div style="margin-top: 24px; padding: 16px; background-color: #f0fdf4; border-radius: 4px;">
+                <p style="margin: 0; color: #166534; font-weight: bold;">Next Steps:</p>
+                <p style="margin: 8px 0 0 0; color: #166534;">Our team will reach out to you within the next few hours to arrange the blood supply delivery.</p>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div style="background-color: #f3f4f6; padding: 16px; text-align: center; border-radius: 0 0 8px 8px;">
+            <p style="margin: 0; color: #6b7280; font-size: 12px;">Blood Bank Management System</p>
+            <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 12px;">For urgent inquiries, please contact our helpline.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    console.log("Status notification email sent successfully:", emailResponse);
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error: any) {
+    console.error("Error in send-status-notification function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+};
+
+serve(handler);

@@ -19,6 +19,7 @@ export type Database = {
           blood_group: string
           contact_person: string
           created_at: string | null
+          email: string | null
           hospital_name: string
           id: string
           patient_name: string
@@ -33,6 +34,7 @@ export type Database = {
           blood_group: string
           contact_person: string
           created_at?: string | null
+          email?: string | null
           hospital_name: string
           id?: string
           patient_name: string
@@ -47,6 +49,7 @@ export type Database = {
           blood_group?: string
           contact_person?: string
           created_at?: string | null
+          email?: string | null
           hospital_name?: string
           id?: string
           patient_name?: string

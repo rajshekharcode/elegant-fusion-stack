@@ -108,12 +108,41 @@ const AdminDashboard = () => {
   // Mutation to update blood request status
   const updateRequestStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      // First, get the request details
+      const { data: request, error: fetchError } = await supabase
+        .from('blood_requests')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Update the status
       const { error } = await supabase
         .from('blood_requests')
         .update({ status })
         .eq('id', id);
       
       if (error) throw error;
+
+      // Send email notification if email exists
+      if (request?.email) {
+        const { error: emailError } = await supabase.functions.invoke('send-status-notification', {
+          body: {
+            email: request.email,
+            patientName: request.patient_name,
+            hospitalName: request.hospital_name,
+            bloodGroup: request.blood_group,
+            unitsRequired: request.units_required,
+            status: status,
+            contactPerson: request.contact_person,
+          },
+        });
+        
+        if (emailError) {
+          console.error('Failed to send notification email:', emailError);
+        }
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bloodRequests'] });
