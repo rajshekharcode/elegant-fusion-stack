@@ -35,11 +35,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [dialogAction, setDialogAction] = useState<'approve' | 'reject' | null>(null);
+  const [isAddStockOpen, setIsAddStockOpen] = useState(false);
+  const [stockForm, setStockForm] = useState({
+    bloodGroup: "",
+    units: "",
+    expiryDate: "",
+    location: "Main Storage",
+    status: "Available",
+  });
 
   // Fetch statistics
   const { data: donors } = useQuery({
@@ -172,6 +197,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // Mutation to add blood stock
+  const addBloodStock = useMutation({
+    mutationFn: async (formData: typeof stockForm) => {
+      const { error } = await supabase.from('blood_stock').insert({
+        blood_group: formData.bloodGroup,
+        units: parseInt(formData.units),
+        expiry_date: formData.expiryDate,
+        location: formData.location,
+        status: formData.status,
+      });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bloodStock'] });
+      toast.success('Blood stock added successfully');
+      setIsAddStockOpen(false);
+      setStockForm({
+        bloodGroup: "",
+        units: "",
+        expiryDate: "",
+        location: "Main Storage",
+        status: "Available",
+      });
+    },
+    onError: (error) => {
+      toast.error(`Failed to add stock: ${error.message}`);
+    },
+  });
+
+  const handleAddStock = () => {
+    if (!stockForm.bloodGroup || !stockForm.units || !stockForm.expiryDate) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    addBloodStock.mutate(stockForm);
+  };
+
   return (
     <div className="min-h-screen bg-background pt-20 pb-12">
       <div className="container mx-auto px-4">
@@ -231,7 +294,7 @@ const AdminDashboard = () => {
         <Card className="mb-8">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Blood Inventory</CardTitle>
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsAddStockOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Stock
             </Button>
@@ -366,6 +429,98 @@ const AdminDashboard = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Add Stock Dialog */}
+        <Dialog open={isAddStockOpen} onOpenChange={setIsAddStockOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Blood Stock</DialogTitle>
+              <DialogDescription>
+                Add new blood units to the inventory
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="bloodGroup">Blood Group *</Label>
+                <Select
+                  value={stockForm.bloodGroup}
+                  onValueChange={(value) => setStockForm({ ...stockForm, bloodGroup: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select blood group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A+">A+</SelectItem>
+                    <SelectItem value="A-">A-</SelectItem>
+                    <SelectItem value="B+">B+</SelectItem>
+                    <SelectItem value="B-">B-</SelectItem>
+                    <SelectItem value="AB+">AB+</SelectItem>
+                    <SelectItem value="AB-">AB-</SelectItem>
+                    <SelectItem value="O+">O+</SelectItem>
+                    <SelectItem value="O-">O-</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="units">Units *</Label>
+                <Input
+                  id="units"
+                  type="number"
+                  min="1"
+                  placeholder="Number of units"
+                  value={stockForm.units}
+                  onChange={(e) => setStockForm({ ...stockForm, units: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expiryDate">Expiry Date *</Label>
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={stockForm.expiryDate}
+                  onChange={(e) => setStockForm({ ...stockForm, expiryDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  placeholder="Storage location"
+                  value={stockForm.location}
+                  onChange={(e) => setStockForm({ ...stockForm, location: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={stockForm.status}
+                  onValueChange={(value) => setStockForm({ ...stockForm, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Available">Available</SelectItem>
+                    <SelectItem value="Low Stock">Low Stock</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddStockOpen(false)}
+                disabled={addBloodStock.isPending}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleAddStock} disabled={addBloodStock.isPending}>
+                {addBloodStock.isPending ? 'Adding...' : 'Add Stock'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Confirmation Dialog */}
         <AlertDialog open={!!dialogAction} onOpenChange={() => setDialogAction(null)}>
