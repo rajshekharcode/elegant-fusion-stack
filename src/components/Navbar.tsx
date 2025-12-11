@@ -73,7 +73,7 @@ const Navbar = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
+                  className="bg-transparent border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
@@ -162,7 +162,7 @@ const Navbar = () => {
                     handleLogout();
                     setIsOpen(false);
                   }}
-                  className="w-full border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
+                  className="w-full bg-transparent border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
