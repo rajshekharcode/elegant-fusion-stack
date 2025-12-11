@@ -147,7 +147,7 @@ const Contact = () => {
                     <p className="text-muted-foreground">
                       123 Healthcare Avenue<br />
                       Medical District<br />
-                      New Delhi - 110001, India
+                      Lucknow
                     </p>
                   </div>
                 </div>
