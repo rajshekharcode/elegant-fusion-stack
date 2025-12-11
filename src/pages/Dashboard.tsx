@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Droplet, Calendar, Award, Clock } from "lucide-react";
+import { Droplet, Calendar, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import AdminDashboard from "./AdminDashboard";
@@ -88,14 +88,6 @@ const Dashboard = () => {
     return null; // Will redirect to register
   }
 
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'Gold': return 'bg-yellow-500';
-      case 'Silver': return 'bg-gray-400';
-      case 'Platinum': return 'bg-purple-500';
-      default: return 'bg-orange-600';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-12">
@@ -105,7 +97,7 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Manage your donor profile and track your contributions</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Blood Group</CardTitle>
@@ -123,16 +115,6 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{donor.donation_count}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Badge Level</CardTitle>
-              <Award className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <Badge className={`${getBadgeColor(donor.badge)} text-white`}>{donor.badge}</Badge>
             </CardContent>
           </Card>
 
