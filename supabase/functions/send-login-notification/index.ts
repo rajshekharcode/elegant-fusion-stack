@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -9,19 +10,127 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface LoginNotificationRequest {
-  name: string;
-  email: string;
-  bloodGroup: string;
-  phone: string;
-  address: string;
-  age: number;
-  gender: string;
-  weight: number;
-  donationCount: number;
-  badge: string;
-  eligible: boolean;
-  loginTime: string;
+// Valid values
+const VALID_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const VALID_GENDERS = ['Male', 'Female', 'Other'];
+const VALID_BADGES = ['Bronze', 'Silver', 'Gold'];
+
+// HTML escape function to prevent XSS
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Input validation
+function validateLoginNotification(data: unknown): {
+  valid: boolean;
+  error?: string;
+  data?: {
+    name: string;
+    email: string;
+    bloodGroup: string;
+    phone: string;
+    address: string;
+    age: number;
+    gender: string;
+    weight: number;
+    donationCount: number;
+    badge: string;
+    eligible: boolean;
+    loginTime: string;
+  };
+} {
+  if (!data || typeof data !== 'object') {
+    return { valid: false, error: 'Invalid request body' };
+  }
+
+  const { name, email, bloodGroup, phone, address, age, gender, weight, donationCount, badge, eligible, loginTime } = data as Record<string, unknown>;
+
+  // Validate name
+  if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) {
+    return { valid: false, error: 'Invalid name' };
+  }
+
+  // Validate email
+  if (typeof email !== 'string') {
+    return { valid: false, error: 'Invalid email' };
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email) || email.length > 255) {
+    return { valid: false, error: 'Invalid email address' };
+  }
+
+  // Validate blood group
+  if (typeof bloodGroup !== 'string' || !VALID_BLOOD_GROUPS.includes(bloodGroup)) {
+    return { valid: false, error: 'Invalid blood group' };
+  }
+
+  // Validate phone
+  if (typeof phone !== 'string' || phone.length > 20) {
+    return { valid: false, error: 'Invalid phone' };
+  }
+
+  // Validate address
+  if (typeof address !== 'string' || address.length > 300) {
+    return { valid: false, error: 'Invalid address' };
+  }
+
+  // Validate age
+  if (typeof age !== 'number' || age < 18 || age > 120) {
+    return { valid: false, error: 'Invalid age' };
+  }
+
+  // Validate gender
+  if (typeof gender !== 'string' || !VALID_GENDERS.includes(gender)) {
+    return { valid: false, error: 'Invalid gender' };
+  }
+
+  // Validate weight
+  if (typeof weight !== 'number' || weight < 30 || weight > 300) {
+    return { valid: false, error: 'Invalid weight' };
+  }
+
+  // Validate donationCount
+  if (typeof donationCount !== 'number' || donationCount < 0 || donationCount > 1000) {
+    return { valid: false, error: 'Invalid donation count' };
+  }
+
+  // Validate badge
+  if (typeof badge !== 'string' || !VALID_BADGES.includes(badge)) {
+    return { valid: false, error: 'Invalid badge' };
+  }
+
+  // Validate eligible
+  if (typeof eligible !== 'boolean') {
+    return { valid: false, error: 'Invalid eligible status' };
+  }
+
+  // Validate loginTime
+  if (typeof loginTime !== 'string' || loginTime.length > 100) {
+    return { valid: false, error: 'Invalid login time' };
+  }
+
+  return {
+    valid: true,
+    data: {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      bloodGroup,
+      phone: phone.trim(),
+      address: address.trim(),
+      age,
+      gender,
+      weight,
+      donationCount,
+      badge,
+      eligible,
+      loginTime: loginTime.trim(),
+    },
+  };
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,6 +140,53 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.log("No authorization header");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.log("Invalid token:", claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Check request size
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 50000) {
+      return new Response(
+        JSON.stringify({ error: 'Request too large' }),
+        { status: 413, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const rawData = await req.json();
+    const validation = validateLoginNotification(rawData);
+
+    if (!validation.valid || !validation.data) {
+      console.log("Validation failed:", validation.error);
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const {
       name,
       email,
@@ -44,9 +200,19 @@ const handler = async (req: Request): Promise<Response> => {
       badge,
       eligible,
       loginTime,
-    }: LoginNotificationRequest = await req.json();
+    } = validation.data;
 
     console.log("Sending login notification for:", email);
+
+    // Escape all user inputs for HTML
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeBloodGroup = escapeHtml(bloodGroup);
+    const safePhone = escapeHtml(phone);
+    const safeAddress = escapeHtml(address);
+    const safeGender = escapeHtml(gender);
+    const safeBadge = escapeHtml(badge);
+    const safeLoginTime = escapeHtml(loginTime);
 
     const eligibilityBadge = eligible
       ? '<span style="display: inline-block; padding: 4px 12px; background-color: #22c55e; color: white; border-radius: 4px; font-weight: 600;">✓ Eligible</span>'
@@ -63,7 +229,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "BloodBank <onboarding@resend.dev>",
       to: [Deno.env.get("ADMIN_ALERT_EMAIL") as string, email],
-      subject: `🔔 User Login Alert - ${name} (${bloodGroup})`,
+      subject: `🔔 User Login Alert - ${safeName} (${safeBloodGroup})`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -194,7 +360,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div class="content">
               <div class="timestamp">
-                <strong>Login Time:</strong> ${loginTime}
+                <strong>Login Time:</strong> ${safeLoginTime}
               </div>
 
               <div class="info-section">
@@ -202,15 +368,15 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="info-grid">
                   <div class="info-item">
                     <div class="info-label">Full Name</div>
-                    <div class="info-value">${name}</div>
+                    <div class="info-value">${safeName}</div>
                   </div>
                   <div class="info-item">
                     <div class="info-label">Email Address</div>
-                    <div class="info-value">${email}</div>
+                    <div class="info-value">${safeEmail}</div>
                   </div>
                   <div class="info-item">
                     <div class="info-label">Phone Number</div>
-                    <div class="info-value">${phone}</div>
+                    <div class="info-value">${safePhone}</div>
                   </div>
                   <div class="info-item">
                     <div class="info-label">Age</div>
@@ -218,7 +384,7 @@ const handler = async (req: Request): Promise<Response> => {
                   </div>
                   <div class="info-item">
                     <div class="info-label">Gender</div>
-                    <div class="info-value">${gender}</div>
+                    <div class="info-value">${safeGender}</div>
                   </div>
                   <div class="info-item">
                     <div class="info-label">Weight</div>
@@ -229,7 +395,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <div style="margin-top: 15px;">
                   <div class="info-item">
                     <div class="info-label">Address</div>
-                    <div class="info-value">${address}</div>
+                    <div class="info-value">${safeAddress}</div>
                   </div>
                 </div>
               </div>
@@ -239,11 +405,11 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="info-grid">
                   <div class="info-item">
                     <div class="info-label">Blood Group</div>
-                    <div class="blood-group">${bloodGroup}</div>
+                    <div class="blood-group">${safeBloodGroup}</div>
                   </div>
                   <div class="info-item">
                     <div class="info-label">Badge Level</div>
-                    <div class="badge-display">${badge}</div>
+                    <div class="badge-display">${safeBadge}</div>
                   </div>
                   <div class="info-item">
                     <div class="info-label">Total Donations</div>
@@ -278,7 +444,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error sending login notification:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Failed to send notification" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

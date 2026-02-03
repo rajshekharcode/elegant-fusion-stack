@@ -110,9 +110,14 @@ const Register = () => {
 
         if (authError) throw authError;
 
+        // Ensure user ID exists before creating donor profile
+        if (!authData.user?.id) {
+          throw new Error('User registration failed - no user ID returned');
+        }
+
         // Create donor profile
         const { error: profileError } = await supabase.from('donors').insert({
-          user_id: authData.user?.id,
+          user_id: authData.user.id,
           name: formData.name,
           age: parseInt(formData.age),
           gender: formData.gender,
@@ -129,7 +134,7 @@ const Register = () => {
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({
-            user_id: authData.user?.id,
+            user_id: authData.user.id,
             role: 'donor'
           });
 
