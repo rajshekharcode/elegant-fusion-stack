@@ -113,7 +113,7 @@ export type Database = {
           name: string
           phone: string
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           weight: number
         }
         Insert: {
@@ -133,7 +133,7 @@ export type Database = {
           name: string
           phone: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           weight: number
         }
         Update: {
@@ -153,7 +153,7 @@ export type Database = {
           name?: string
           phone?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           weight?: number
         }
         Relationships: []
